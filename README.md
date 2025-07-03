@@ -110,7 +110,9 @@ The filtered results are shown live using a separate adapter, enhancing the brow
 *SharedPreferences* for login persistence
 
 
-## 🎯 Planned: Spring Boot REST API + PostgreSQL DB for backend features
+## 🎯 Planned:
+
+ Spring Boot REST API + PostgreSQL DB for backend features
 
 
 *What’s Next*
