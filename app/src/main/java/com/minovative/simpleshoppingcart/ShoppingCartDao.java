@@ -17,9 +17,11 @@ public interface ShoppingCartDao {
     void updateItemQtt(ShoppingCart item);
 
     @Query("SELECT * FROM shoppingCart WHERE itemName =:itemName AND price =:price")
-    List<ShoppingCart> getAllItems(String itemName, int price);
+    List<ShoppingCart> getAllItems(String itemName, double price);
 
     @Query("SELECT * FROM shoppingCart")
     LiveData<List<ShoppingCart>> getFinalItems();
 
+    @Query("DELETE FROM shoppingCart WHERE itemName=:itemName")
+    void deleteItem(String itemName);
 }

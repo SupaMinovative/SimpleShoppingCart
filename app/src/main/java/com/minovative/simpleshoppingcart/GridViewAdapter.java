@@ -1,9 +1,10 @@
 package com.minovative.simpleshoppingcart;
 
+import static com.minovative.simpleshoppingcart.Helper.addItemToCart;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,39 +13,40 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class GridViewAdapter extends ArrayAdapter<ProductItem> {
 
-
-    private List<ProductItem> itemList;
-
     private Context context;
 
-    private Activity activity;
-
-
+    private OnItemClickListener listener;
     private List<ShoppingCart> newItemOnCart = new ArrayList<>();
-    public GridViewAdapter(Activity activity,List<ProductItem> list) {
+    public GridViewAdapter(Activity activity,List<ProductItem> list, OnItemClickListener listener) {
         super(activity,0,list);
         this.context = activity;
-        this.activity = activity;
+        this.listener = listener;
     }
+    // Livedata updating current item on the cart
     public void updateCartItems(List<ShoppingCart> newItems) {
 
         this.newItemOnCart.addAll(newItems);
         notifyDataSetChanged();
     }
-  
+
+    public interface OnItemClickListener {
+        void onItemClick(ProductItem currentPosition);
+    }
 
     static class ViewHolder {
         ImageView productImg;
         TextView productDetail;
         TextView productPrice;
         ImageView addCart;
+
     }
 
     @SuppressLint("SetTextI18n")
@@ -74,50 +76,26 @@ public class GridViewAdapter extends ArrayAdapter<ProductItem> {
         holder.productImg.setImageResource(item.getImgPath());
         holder.productDetail.setText(item.getItemName());
         holder.productPrice.setText(item.getPrice() + " €");
+        holder.productPrice.setTextColor(ContextCompat.getColor(context,R.color.black));
+
+        holder.productImg.setOnClickListener((v) -> {
+
+            listener.onItemClick(item);
+        });
 
         holder.addCart.setOnClickListener(view -> {
 
-            String currentProduct = item.getItemName();
-            int productImg = item.getImgPath();
-            int productPrice = item.getPrice();
-            AtomicInteger itemQuantity = new AtomicInteger(1);
+            addItemToCart(item, context);
 
-            new Thread(( ) -> {
-                AppDatabase db = AppDatabase.getInstance(context);
-                ShoppingCartDao shoppingCartDao = db.shoppingCartDao();
+            holder.productPrice.setText("Item added to cart");
+            holder.productPrice.setTextColor(ContextCompat.getColor(context,R.color.colorSecondaryVariant));
 
-                List<ShoppingCart> itemOnCart = shoppingCartDao.getAllItems(currentProduct,productPrice);
-                boolean exists = false;
-                int updateQtt = 0;
-                for (ShoppingCart it : itemOnCart){
-                    updateQtt = it.getQuantity();
-                    if (currentProduct.equals(it.getItemName())) {
-                        exists = true;
-                        break;
-                    }
-                }
-
-                if (exists) {
-
-                    updateQtt++;
-                    ShoppingCart updateCartItem = new ShoppingCart(currentProduct,productImg,productPrice,updateQtt);
-                    Log.d("DEBUG", "Item is being update to cart. Current Item clicked : " + currentProduct + "current qtt: " + updateQtt);
-                    shoppingCartDao.updateItemQtt(updateCartItem);
-
-                }
-
-                if (!exists) {
-                    ShoppingCart newCartItem = new ShoppingCart(currentProduct,productImg,productPrice,itemQuantity.get());
-                    Log.d("DEBUG", "Item is being added to cart");
-                    shoppingCartDao.insertItem(newCartItem);
-                }
-
-            }).start();
-
-
+            new android.os.Handler().postDelayed(( ) -> {
+                holder.productPrice.setTextColor(ContextCompat.getColor(context,R.color.black));
+                holder.productPrice.setText(item.getPrice() + " €");
+            }, 4500);
         });
+
         return convertView;
     }
-
-
 }

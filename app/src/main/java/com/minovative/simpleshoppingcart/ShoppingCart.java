@@ -12,11 +12,11 @@ public class ShoppingCart {
     @ColumnInfo(name ="imgPath")
     private int imgPath;
     @ColumnInfo(name ="price")
-    private int price;
+    private double price;
     @ColumnInfo(name ="quantity")
     private int quantity;
 
-    public ShoppingCart(String itemName, int imgPath,int price, int quantity) {
+    public ShoppingCart(String itemName, int imgPath,double price, int quantity) {
         this.itemName = itemName;
         this.imgPath = imgPath;
         this.price = price;
@@ -39,11 +39,10 @@ public class ShoppingCart {
         this.imgPath = imgPath;
     }
 
-    public int getPrice( ) {
+    public double getPrice( ) {
         return price;
     }
-
-    public void setPrice(int price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 

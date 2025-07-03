@@ -3,12 +3,14 @@ package com.minovative.simpleshoppingcart;
 public class ProductItem {
     private int imgPath;
     private String itemName;
-    private int price;
+    private double price;
+    private String itemDescription;
 
-    public ProductItem(int imgPath,String itemName,int price) {
+    public ProductItem(int imgPath,String itemName,double price,String itemDescription) {
         this.imgPath = imgPath;
         this.itemName = itemName;
         this.price = price;
+        this.itemDescription = itemDescription;
     }
 
     public int getImgPath( ) {
@@ -27,11 +29,19 @@ public class ProductItem {
         this.itemName = itemName;
     }
 
-    public int getPrice( ) {
+    public double getPrice( ) {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(double price) {
         this.price = price;
+    }
+
+    public String getItemDescription( ) {
+        return itemDescription;
+    }
+
+    public void setItemDescription(String itemDescription) {
+        this.itemDescription = itemDescription;
     }
 }

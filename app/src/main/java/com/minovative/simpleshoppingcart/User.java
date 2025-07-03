@@ -16,10 +16,13 @@ public class User {
     @ColumnInfo(name = "password")
     private String password;
 
-    public User(@NonNull String username,@NonNull String email,String password) {
+    @ColumnInfo(name ="status")
+    private boolean status;
+    public User(@NonNull String username,@NonNull String email,String password, boolean status) {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.status = status;
     }
 
     @NonNull
@@ -46,5 +49,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isStatus( ) {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
     }
 }

@@ -1,17 +1,19 @@
 package com.minovative.simpleshoppingcart;
 
-import android.content.Context;
+import static com.minovative.simpleshoppingcart.Helper.clearSharedPreferences;
+import static com.minovative.simpleshoppingcart.Helper.saveData;
+import static com.minovative.simpleshoppingcart.Helper.setEmptyText;
+import static com.minovative.simpleshoppingcart.Helper.setErrorText;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,13 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView passErrorText;
     private TextView regCon;
     private TextView signupBtn;
-    private TextView userShow;
     private Button loginBtn;
-
     private Button regBtn;
     private LinearLayout regOpt;
-    private LinearLayout loginForm;
-    private LinearLayout welcomePage;
     private String username;
     private String email;
     private String reEmailName;
@@ -46,12 +44,10 @@ public class MainActivity extends AppCompatActivity {
     private String currentUser;
     private AppDatabase db;
     private UserDao userDao;
-
     List<User> userOnDb;
     private CheckBox remember;
     private boolean accStatus;
     private boolean logoutStatus;
-
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -59,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        Log.d("DEBUG", "On create being called");
+
         loginTextView = findViewById(R.id.logInTextView);
         usernameText = findViewById(R.id.username);
         emailText = findViewById(R.id.emailText);
@@ -73,26 +69,24 @@ public class MainActivity extends AppCompatActivity {
         signupBtn = findViewById(R.id.signUpBtn);
         regBtn = findViewById(R.id.regisButton);
         regOpt = findViewById(R.id.regOpt);
-        loginForm = findViewById(R.id.loginForm);
-        welcomePage = findViewById(R.id.welcomePage);
-        userShow = findViewById(R.id.usernameShow);
         remember = findViewById(R.id.rememberCheck);
 
         db = AppDatabase.getInstance(this);
         userDao = db.userDao();
 
-
+        // Account status pass via intent
         logoutStatus = getIntent().getBooleanExtra("ACCOUNT_STATUS",false);
+
         if (logoutStatus) {
+
             accStatus = false;
             remember.setChecked(false);
+            clearSharedPreferences(this);
         } else {
+                retrieveData(currentUser);
+        };
 
-            Log.d("DEBUG","Retrieve data is trigger");
-            retrieveData(currentUser);
-
-                Log.d("DEBUG","Account status: " + accStatus);
-            }
+        // Sign up button event
         signupBtn.setOnClickListener(v -> {
 
             remember.setVisibility(View.GONE);
@@ -105,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
             regOpt.setVisibility(View.GONE);
         });
 
+        // Registration event
         regBtn.setOnClickListener(v -> {
 
             username = usernameText.getText().toString().trim();
@@ -130,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            // Checking for existing users on database
             new Thread(( ) -> {
                 userOnDb = userDao.getUserLogin(email,password);
                 boolean exists = false;
@@ -142,12 +138,12 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (exists) {
-
                     runOnUiThread(( ) -> {
                         removeView();
                         setEmptyText(loginTextView);
                         setEmptyText(emailText);
                         setEmptyText(passText);
+                        remember.setVisibility(View.GONE);
                         regCon.setText("You already have an account. Please login.");
                         regBtn.setVisibility(View.GONE);
                         loginBtn.setVisibility(View.VISIBLE);
@@ -155,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (!exists) {
-                    User newUser = new User(username,email,password);
+                    User newUser = new User(username,email,password, false);
                     userDao.insertUser(newUser);
                 }
             }).start();
@@ -170,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                 removeView();
                 setEmptyText(emailText);
                 setEmptyText(passText);
-                remember.setVisibility(View.VISIBLE);
+                remember.setVisibility(View.GONE);
                 loginTextView.setText("WELCOME");
                 regCon.setVisibility(View.VISIBLE);
                 regCon.setText("Registered successfully! You can now log in to your account.");
@@ -179,7 +175,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Login event
         loginBtn.setOnClickListener(v -> {
+
+            remember.setVisibility(View.VISIBLE);
             loginTextView.setText("LOGIN");
             emailText.setVisibility(View.VISIBLE);
             passText.setVisibility(View.VISIBLE);
@@ -189,9 +188,7 @@ public class MainActivity extends AppCompatActivity {
             String loginEmail = emailText.getText().toString().trim();
             String loginPass = passText.getText().toString().trim();
 
-
             if (loginEmail.isEmpty() && loginPass.isEmpty()) {
-                Log.d("DEBUG","LoginEmail " + loginEmail + "loginPass " + loginPass);
                 return;
             }
 
@@ -200,78 +197,46 @@ public class MainActivity extends AppCompatActivity {
                 userOnDb = userDao.getUserLogin(loginEmail,loginPass);
 
                 runOnUiThread(( ) -> {
-                    Log.d("DEBUG","User on DB " + userOnDb);
                     boolean isCorrect = false;
 
-                    for (User user : userOnDb){
+                    for (User user : userOnDb) {
                         currentUser = user.getUsername();
                         if (loginEmail.equals(user.getEmail()) && loginPass.equals(user.getPassword())) {
 
-                            Log.d("DEBUG","LoginEmail: " + loginEmail + "userEmail: " + user.getEmail() +
-                                    "loginpass: " + loginPass + "userPass: " + user.getPassword());
+                            user.setStatus(true);
+
                             isCorrect = true;
                             break;
                         }
                     }
+                    // On login successfully
                     if (isCorrect) {
 
-                        saveData(loginEmail,loginPass, currentUser);
-                        Log.d("DEBUG", "Username from login: " +currentUser);
-
-                        Log.d("DEBUG","Account status from login: " + accStatus);
+                        saveData(loginEmail,loginPass, currentUser, accStatus, remember, this);
                         Intent intent = new Intent(MainActivity.this,ShoppingActivity.class);
                         intent.putExtra("EMAIL",loginEmail);
                         intent.putExtra("USERNAME",currentUser);
                         startActivity(intent);
-                       /*
-                        email = String.valueOf(emailText.getText());
-                        password = String.valueOf(passText.getText());
-                        welcomePage.setVisibility(View.VISIBLE);
-                        emailText.setVisibility(View.VISIBLE);
-                        passText.setVisibility(View.VISIBLE);
-                        setEmptyText(passErrorText);
-                        passErrorText.setVisibility(View.GONE);
-                        loginForm.setVisibility(View.GONE);
-                        userShow.setText(username);
-*/
+                        finish();
+
                     } else {
                         setErrorText(errorText,"Email or password is incorrect. Please try again.");
                     }
                 });
             }).start();
         });
-
-
-    }
-
-    public void saveData(String email,String password, String currentUser) {
-        sharedPreferences = getSharedPreferences("saveData",Context.MODE_PRIVATE);
-        if (remember.isChecked()) {
-            accStatus = true;
-        } else {
-            accStatus = false;
-        }
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("key name",email);
-        editor.putString("key password",password);
-        editor.putString("key username",currentUser);
-        editor.putBoolean("key remember",accStatus);
-        Log.d("DEBUG","Save by SP currentUser = " + currentUser);
-        editor.apply();
-        Toast.makeText(getApplicationContext(),"Your data is saved",Toast.LENGTH_LONG).show();
     }
 
     public void retrieveData(String currentUser) {
         sharedPreferences = getSharedPreferences("saveData",MODE_PRIVATE);
         if (currentUser == null) {
-        currentUser = sharedPreferences.getString("key username",null);}
+            currentUser = sharedPreferences.getString("key username",null);}
 
         accStatus = sharedPreferences.getBoolean("key remember",false);
 
         if (accStatus) {
             remember.setChecked(true);
             Intent intent = new Intent(MainActivity.this,ShoppingActivity.class);
-            Log.d("DEBUG","Starting intent from retrieve data");
             intent.putExtra("USERNAME",currentUser);
             startActivity(intent);
             finish();
@@ -286,22 +251,6 @@ public class MainActivity extends AppCompatActivity {
         reEmailText.setVisibility(View.GONE);
         passText.setVisibility(View.GONE);
         rePassText.setVisibility(View.GONE);
-    }
-
-    public void setErrorText(TextView t,String str) {
-
-        t.setVisibility(View.VISIBLE);
-        t.setText(str);
-
-        new android.os.Handler().postDelayed(( ) -> {
-
-            setEmptyText(t);
-
-        },2000);
-    }
-
-    public void setEmptyText(TextView t) {
-        t.setText("");
     }
 
 }

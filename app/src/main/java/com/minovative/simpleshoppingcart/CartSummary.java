@@ -1,13 +1,11 @@
 package com.minovative.simpleshoppingcart;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
@@ -35,47 +33,29 @@ public class CartSummary extends AppCompatActivity {
         backBtn.setOnClickListener(view ->
                 super.onBackPressed());
 
-
-         db = AppDatabase.getInstance(this);
+        db = AppDatabase.getInstance(this);
         ShoppingCartDao shoppingCartDao = db.shoppingCartDao();
 
         CartViewModel cartViewModel = new ViewModelProvider(this,
                 new CartViewModelFactory(getApplication(),db.shoppingCartDao()))
                 .get(CartViewModel.class);
-        adapter = new ItemListAdapter(CartSummary.this, itemList);
+        adapter = new ItemListAdapter(CartSummary.this,itemList);
         listView.setAdapter(adapter);
-        cartViewModel.getFinalItems().observe(this, existingItems -> {
+
+        // Livedata observing changes on cart
+        cartViewModel.getFinalItems().observe(this,existingItems -> {
 
             if (existingItems != null) {
 
                 adapter.updateItems(existingItems);
 
-                double total = existingItems.stream().mapToInt(item -> item.getPrice() * item.getQuantity()).sum();
-                totalAmount.setText("Total " + String.format("%.2f",total) + " €");
+                double total = existingItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
+                int totalQtt = existingItems.stream().mapToInt(item -> item.getQuantity()).sum();
+                if (totalQtt == 1) {
+                    totalAmount.setText("Total (" + totalQtt + " item) : " + String.format("%.2f",total) + " €");
+                } else
+                    totalAmount.setText("Total (" + totalQtt + " items) : " + String.format("%.2f",total) + " €");
             }
         });
-
-/*
-
-        new Thread(( ) -> {
-
-            try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                ShoppingCartDao shoppingCartDao = db.shoppingCartDao();
-                LiveData<List<ShoppingCart>> itemList = shoppingCartDao.getFinalItems();
-
-                double total = itemList.stream().mapToInt(item -> item.getPrice() * item.getQuantity()).sum();
-                runOnUiThread(() -> {
-
-                        adapter = new ItemListAdapter(CartSummary.this, itemList);
-                        listView.setAdapter(adapter);
-                        totalAmount.setText("Total " + String.format("%.2f",total) + " €");
-
-                });
-
-            } catch (Exception e) {
-                Log.d("DEBUG", "App is crashing due to DB");
-            }
-        }).start();*/
     }
 }
