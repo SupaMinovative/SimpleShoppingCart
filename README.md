@@ -4,7 +4,7 @@
 A fully self-built Android application that simulates the core logic of a real-world online shopping system — developed with a focus on clean architecture, real-time UI updates, and user interaction flow.
 
 
-<p align="center"><img src="screenshots/cart_navigation.gif" alt="Main Screen" width="400"/></p>
+<p align="center"><img src="screenshots/cart_navigation.gif" alt="Main Screen" width="300"/></p>
 
 
 ## 🎯 Purpose & Learning Goals
